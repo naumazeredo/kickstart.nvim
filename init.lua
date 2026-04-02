@@ -102,7 +102,7 @@ vim.g.have_nerd_font = false
 vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.o.relativenumber = true
+vim.o.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
@@ -228,6 +228,29 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight when yanking (copying) text',
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
   callback = function() vim.hl.on_yank() end,
+})
+
+-- Disable unwanted format options
+vim.api.nvim_create_autocmd('BufEnter', {
+  desc = 'Disable automatic comment insertion on new lines',
+  callback = function() vim.opt.formatoptions:remove { 'c', 'r', 'o' } end,
+})
+
+-- Jump to last opened line position
+local ignore_buftype = { 'quickfix', 'nofile', 'help' }
+local ignore_filetype = { 'gitcommit', 'gitrebase' }
+vim.api.nvim_create_autocmd('BufReadPost', {
+  pattern = '*',
+  callback = function()
+    -- ignore some filetypes and buffers
+    local buftype = vim.bo.buftype
+    local filetype = vim.bo.filetype
+
+    if vim.tbl_contains(ignore_buftype, buftype) or vim.tbl_contains(ignore_filetype, filetype) then return end
+
+    local row, col = unpack(vim.api.nvim_buf_get_mark(0, '"'))
+    if { row, col } ~= { 0, 0 } then vim.api.nvim_win_set_cursor(0, { row, 0 }) end
+  end,
 })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
@@ -397,6 +420,7 @@ require('lazy').setup({
         extensions = {
           ['ui-select'] = { require('telescope.themes').get_dropdown() },
         },
+        file_ignore_patterns = { '.git/', '.cache' },
       }
 
       -- Enable Telescope extensions if they are installed
@@ -606,7 +630,7 @@ require('lazy').setup({
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
-        -- rust_analyzer = {},
+        rust_analyzer = {},
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
         --    https://github.com/pmizio/typescript-tools.nvim
@@ -903,6 +927,12 @@ require('lazy').setup({
     end,
   },
 
+  {
+    'https://github.com/MeanderingProgrammer/render-markdown.nvim',
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-mini/mini.nvim' },
+    opts = {},
+  },
+
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
@@ -913,10 +943,10 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
