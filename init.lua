@@ -253,6 +253,47 @@ do
   })
 end
 
+-- My autocmds
+do
+  local mygroup = vim.api.nvim_create_augroup('mygroup', { clear = true })
+
+  vim.api.nvim_create_autocmd('FileType', {
+    desc = "Don't continue comments on o and O",
+    group = mygroup,
+    pattern = { "*" },
+    callback = function()
+      vim.opt.formatoptions = vim.opt.formatoptions + {
+        o = false,
+      }
+    end,
+  })
+
+
+  vim.api.nvim_create_autocmd('BufReadPre', {
+    desc = "Restore cursor position",
+    group = mygroup,
+    pattern = { "*" },
+    callback = function()
+      vim.api.nvim_create_autocmd("FileType", {
+        group = mygroup,
+        buffer = 0,
+        once = true,
+        callback = function()
+          local ft = vim.bo.filetype
+          if not vim.wo.diff
+            and not ft:match("commit")
+            and not ft:match("rebase")
+            and vim.fn.line([['"]]) > 1
+            and vim.fn.line([['"]]) <= vim.fn.line("$")
+          then
+            vim.cmd([[normal! g`"]])
+          end
+        end,
+      })
+    end,
+  })
+end
+
 -- ============================================================
 -- SECTION 3: PLUGIN MANAGER INTRO
 -- vim.pack intro, build hooks
@@ -812,6 +853,9 @@ do
     vim.lsp.config(name, server)
     vim.lsp.enable(name)
   end
+
+  -- Configure in NixOS
+  vim.lsp.enable('rust_analyzer')
 end
 
 -- ============================================================
@@ -1015,10 +1059,10 @@ do
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug'
-  -- require 'kickstart.plugins.indent_line'
+  require 'kickstart.plugins.indent_line'
   -- require 'kickstart.plugins.lint'
   -- require 'kickstart.plugins.autopairs'
-  -- require 'kickstart.plugins.neo-tree'
+  require 'kickstart.plugins.neo-tree'
 
   -- NOTE: You can add your own plugins, configuration, etc. in `lua/custom/plugins/*.lua`.
   --
@@ -1033,6 +1077,14 @@ do
   -- require 'custom.plugins.colorscheme'
   -- require 'custom.plugins.ui'
   -- require 'custom.plugins.git'
+
+  vim.pack.add({
+      'https://github.com/nvim-treesitter/nvim-treesitter',
+      'https://github.com/nvim-mini/mini.nvim',            -- if you use the mini.nvim suite
+      'https://github.com/nvim-mini/mini.icons',        -- if you use standalone mini plugins
+      'https://github.com/MeanderingProgrammer/render-markdown.nvim',
+  })
+  require('render-markdown').setup({}) -- only mandatory if you want to set custom options
 end
 
 -- The line beneath this is called `modeline`. See `:help modeline`
